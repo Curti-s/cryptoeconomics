@@ -26,7 +26,7 @@ describe('Client Tests', () => {
       assert.deepEqual(tx.contents, unsignedTx);
     });
     it('should properly sign the contents', () => {
-      const sig = alice.sign(unsignedTx);
+      const sig = alice.sign(tx.contents);
       assert.equal(tx.sig, sig);
     });
   });
@@ -176,7 +176,7 @@ describe('Paypal Tests', () => {
       const aliceTx2Bob = alice.generateTx(bob.wallet.address, 10, 'send');
       assert.equal(false, paypal.checkTx(aliceTx2Bob));
     });
-    it('should return true because Paypal is authorized to mind tokens on their own network', () => {
+    it('should return true because Paypal is authorized to mint tokens on their own network', () => {
       const validMint = paypal.generateTx(paypal.wallet.address, 1000, 'mint');
       assert.equal(true, paypal.checkTx(validMint));
     });

@@ -18,84 +18,109 @@ class Paypal extends Client {
   // Checks that the sender of a transaction is the same as the signer
   checkTxSignature(tx) {
     // get the signature from the transaction
-    // TODO
+    const { sig, contents } = tx;
+    const { from } = contents;
+    const signature = this.verify(sig, this.toHash(contents), from);  
     // if the signature is invalid print an error to the console and return false
-    // TODO
-    // return true if the transaction is valid
-    // TODO
+    if(!signature) {
+      console.log('Invalid signature');
+      return false;
+    }
+    return true;
   }
 
   // Checks if the user's address is already in the state, and if not, adds the user's address to the state
   checkUserAddress(tx) {
-    // check if the sender is in the state
-    // TODO
-    // if the sender is not in the state, create an account for them
-    // TODO
+    const { contents:{ to, from } } = tx;
     // check if the receiver is in the state
-    // TODO
     // if the receiver is not in the state, create an account for them
-    // TODO
+    if(!(to in this.state)) {
+      this.state[to] = { balance:0 };
+    }
+    // check if the sender is in the state
+    // if the sender is not in the state, create an account for them
+    if(!(from in this.state)) {
+      this.state[from] = { balance:0 };
+    }
     // once the checks on both accounts pass (they're both in the state), return true
-    // TODO
+    return true;
   }
 
   // Checks the transaction type and ensures that the transaction is valid based on that type
   checkTxType(tx) {
+    const { type, from, to, amount } = tx.contents;
     // if the transaction type is 'mint'
-    // TODO
+    if(type === 'mint') {
     // check that the sender is PayPal
-    // TODO
-    // if the check fails, print an error to the concole stating why and return false so that the transaction is not processed
-    // TODO
-    // if the check passes, return true
-    // TODO
-    // if the transaction type is 'check'
-    // TODO
-    // print the balance of the sender to the console
-    // TODO
+      if(from !== this.wallet.address) {
+        console.log('Invalid minter, need to register with CBK');
+        return false;
+      }
+      return true;
+    }
+    // if the transaction type is 'check' & print the sender's balance to the
+    // console
     // return false so that the stateTransitionFunction does not process the tx
-    // TODO
+    if(type === 'check') {
+      console.log(`Your balance is ${this.state[from].balance}`);
+      return false;
+    }
     // if the transaction type is 'send'
-    // TODO
     // check that the transaction amount is positive and the sender has an account balance greater than or equal to the transaction amount
     // if a check fails, print an error to the console stating why and return false
-    // TODO
     // if the check passes, return true
-    // TODO
+    if(type === 'send') {
+      if((this.state[from].balance - amount) < 0) {
+        console.log('Not enough money');
+        return false;
+      }
+      console.log('new state after spending \n', this.state);
+    }
+    return true;
   }
 
   // Checks if a transaction is valid, adds it to the transaction history, and updates the state of accounts and balances
   checkTx(tx) {
     // check that the transaction signature is valid
-    // TODO
     // check that the transaction sender and receiver are in the state
-    // TODO
     // check that the transaction type is valid
-    // TODO
     // if all checks pass return true
-    // TODO
     // if any checks fail return false
-    // TODO
+    if(this.checkTxSignature(tx)) {
+      if(this.checkUserAddress(tx)) {
+        if(this.checkTxType(tx)) {
+          return true
+        }
+      }
+    }
+    return false;
   }
 
   // Updates account balances according to a transaction and adds the transaction to the history
   applyTx(tx) {
-    // decrease the balance of the transaction sender/signer
-    // TODO
-    // increase the balance of the transaction receiver
-    // TODO
+    const { contents:{ from, to, amount, type } } = tx;
+    if(type === 'mint') {
+      this.state[to].balance += amount;
+      this.state[this.wallet.address].balance -= amount;
+    } else {
+      // decrease the balance of the transaction sender/signer
+      this.state[from].balance -= amount;
+      // increase the balance of the transaction receiver
+      this.state[to].balance += amount;
+    }
     // add the transaction to the transaction history
-    // TODO
+    this.txHistory.push(tx);
     // return true once the transaction is processed
-    // TODO
+    return true;
   }
 
   // Process a transaction
   processTx(tx) {
     // check the transaction is valid
-    // TODO
+    if(this.checkTx(tx)) {
     // apply the transaction to Paypal's state
-    // TODO
+      this.applyTx(tx);
+    }
   }
 }
 
